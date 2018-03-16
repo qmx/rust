@@ -46,10 +46,12 @@ pub mod generator;
 pub mod inline;
 pub mod lower_128bit;
 pub mod uniform_array_move_out;
+pub mod must_clone_lint;
 
 pub(crate) fn provide(providers: &mut Providers) {
     self::qualify_consts::provide(providers);
     self::check_unsafety::provide(providers);
+    self::must_clone_lint::provide(providers);
     *providers = Providers {
         mir_keys,
         mir_built,
@@ -189,6 +191,8 @@ pub macro run_passes($tcx:ident, $mir:ident, $def_id:ident, $suite_index:expr; $
 fn mir_const<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, def_id: DefId) -> &'tcx Steal<Mir<'tcx>> {
     // Unsafety check uses the raw mir, so make sure it is run
     let _ = tcx.unsafety_check_result(def_id);
+
+    let _ = tcx.must_clone_lint(def_id);
 
     let mut mir = tcx.mir_built(def_id).steal();
     run_passes![tcx, mir, def_id, 0;
