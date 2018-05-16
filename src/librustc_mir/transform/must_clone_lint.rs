@@ -1,5 +1,6 @@
 use rustc::ty::{TyCtxt, TyClosure};
 use rustc::hir::def_id::DefId;
+use rustc::lint::builtin::MUST_CLONE;
 use rustc::mir::*;
 use rustc::mir::visit::Visitor;
 use rustc::ty::maps::Providers;
@@ -14,24 +15,25 @@ pub fn provide(providers: &mut Providers) {
 pub struct MustCloneChecker<'a,'tcx: 'a> {
     mir: &'a Mir<'tcx>,
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
+    violations: Vec<MustCloneViolation>,
 }
 
 impl<'a, 'gcx, 'tcx> MustCloneChecker<'a, 'tcx> {
     fn new(mir: &'a Mir<'tcx>,
            tcx: TyCtxt<'a, 'tcx, 'tcx>) -> Self {
         Self {
-            mir, tcx
+            mir, tcx, violations: vec![],
         }
     }
 }
 
 impl<'a, 'tcx> Visitor<'tcx> for MustCloneChecker<'a, 'tcx> {
     fn visit_operand(&mut self, operand: &Operand<'tcx>,
-                     _location: Location) {
+                     location: Location) {
         if let Operand::Copy(ref place) = *operand {
             let ty = place.ty(self.mir, self.tcx).to_ty(self.tcx);
             if let TyClosure(_, _) = ty.sty {
-                debug!("closure copy");
+                debug!("closure copy {:?}", location);
             }
         }
     }
@@ -45,5 +47,7 @@ fn must_clone_lint<'a, 'tcx>(tcx: TyCtxt<'a,'tcx,'tcx>,
     let mut checker = MustCloneChecker::new(mir, tcx);
     checker.visit_mir(mir);
 
-    MustCloneCheckResult{}
+    MustCloneCheckResult{
+        violations:checker.violations.into()
+    }
 }

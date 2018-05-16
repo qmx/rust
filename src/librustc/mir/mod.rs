@@ -38,6 +38,7 @@ use std::cell::Ref;
 use std::fmt::{self, Debug, Formatter, Write};
 use std::{iter, mem, u32};
 use std::ops::{Index, IndexMut};
+use std::rc::Rc;
 use std::vec::IntoIter;
 use syntax::ast::{self, Name};
 use syntax::symbol::InternedString;
@@ -2001,7 +2002,16 @@ impl Location {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
-pub struct MustCloneCheckResult{}
+pub struct MustCloneViolation{
+    pub source_info: SourceInfo,
+    pub description: InternedString,
+    pub lint_node_id: ast::NodeId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
+pub struct MustCloneCheckResult{
+    pub violations: Rc<[MustCloneViolation]>,
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
 pub enum UnsafetyViolationKind {
