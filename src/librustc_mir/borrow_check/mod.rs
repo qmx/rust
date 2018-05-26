@@ -2422,7 +2422,7 @@ impl<'cx, 'gcx, 'tcx> MirBorrowckCtxt<'cx, 'gcx, 'tcx> {
     /// passed to the callback.
     fn each_borrow_involving_path<F>(
         &mut self,
-        _context: Context,
+        context: Context,
         access_place: (ShallowOrDeep, &Place<'tcx>),
         flow_state: &Flows<'cx, 'gcx, 'tcx>,
         mut op: F,
@@ -2437,7 +2437,7 @@ impl<'cx, 'gcx, 'tcx> MirBorrowckCtxt<'cx, 'gcx, 'tcx> {
         // check for loan restricting path P being used. Accounts for
         // borrows of P, P.a.b, etc.
         let borrow_set = self.borrow_set.clone();
-        for i in flow_state.borrows_in_scope() {
+        flow_state.borrows_in_scope(context.loc, |i|{
             let borrowed = &borrow_set[i];
 
             if self.places_conflict(&borrowed.borrowed_place, place, access) {
@@ -2450,7 +2450,7 @@ impl<'cx, 'gcx, 'tcx> MirBorrowckCtxt<'cx, 'gcx, 'tcx> {
                     return;
                 }
             }
-        }
+        });
     }
 
     fn is_active(

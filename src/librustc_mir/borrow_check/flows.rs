@@ -61,8 +61,12 @@ impl<'b, 'gcx, 'tcx> Flows<'b, 'gcx, 'tcx> {
         }
     }
 
-    crate fn borrows_in_scope(&self) -> impl Iterator<Item = BorrowIndex> + '_ {
-        self.borrows.iter_incoming()
+    crate fn borrows_in_scope(&self, location: PointIndex, each_borrow: impl FnMut(BorrowIndex)) {
+        if let Some(polonius) = self.polonius_output {
+            for borrow in polonius.regions_live_at(location) { each_borrow(borrow) }
+        } else {
+            self.borrows.iter_incoming().for_each(each_borrow)
+        }
     }
 
     crate fn with_outgoing_borrows(&self, op: impl FnOnce(Iter<BorrowIndex>)) {
