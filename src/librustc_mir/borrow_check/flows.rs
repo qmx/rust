@@ -62,7 +62,10 @@ impl<'b, 'gcx, 'tcx> Flows<'b, 'gcx, 'tcx> {
         }
     }
 
-    crate fn borrows_in_scope(&self, location: LocationIndex) -> impl Iterator<Item = BorrowIndex> + '_ {
+    crate fn borrows_in_scope(
+        &self,
+        location: LocationIndex,
+    ) -> impl Iterator<Item = BorrowIndex> + '_ {
         if let Some(ref polonius) = self.polonius_output {
             Either::Left(polonius.errors_at(location).iter().cloned())
         } else {
